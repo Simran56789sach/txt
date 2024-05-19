@@ -1,0 +1,104 @@
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="AdminLogin.aspx.cs" Inherits="PizzaProject__.AdminLogin" %>
+
+<!DOCTYPE html>
+<html lang="en">
+<head runat="server">
+    <meta charset="UTF-8">
+    <title>Admin Login</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <form id="form1" runat="server">
+    <div>
+        <div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h3 class="card-title text-center">Admin Login</h3>
+                    <asp:Label ID="lblMessage" runat="server" ForeColor="Red" CssClass="text-center d-block mb-3"></asp:Label>
+                    <div class="form-group">
+                        <asp:TextBox ID="txtUsername" runat="server" CssClass="form-control" placeholder="Username"></asp:TextBox>
+                    </div>
+                    <div class="form-group">
+                        <asp:TextBox ID="txtPassword" runat="server" CssClass="form-control" placeholder="Password" TextMode="Password"></asp:TextBox>
+                    </div>
+                    <asp:Button ID="btnAdminLogin" runat="server" Text="Admin Login" CssClass="btn btn-primary btn-block" OnClick="btnAdminLogin_Click" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    </div>
+</form>
+    
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+
+namespace PizzaProject__
+{
+    public partial class AdminLogin : System.Web.UI.Page
+    {
+        protected void btnAdminLogin_Click(object sender, EventArgs e)
+        {
+            string username = txtUsername.Text.Trim();
+            string password = txtPassword.Text.Trim();
+
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            {
+                lblMessage.Text = "Please fill all the fields.";
+                return;
+            }
+
+            string connString = System.Configuration.ConfigurationManager.ConnectionStrings["PizzaProjectDB"].ConnectionString;
+            using (SqlConnection conn = new SqlConnection(connString))
+            {
+                conn.Open();
+                string query = "SELECT AdminId FROM Admin WHERE Username = @Username AND Password = @Password";
+                SqlCommand cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@Username", username);
+                cmd.Parameters.AddWithValue("@Password", password);
+                SqlDataReader reader = cmd.ExecuteReader();
+
+                if (reader.HasRows)
+                {
+                    reader.Read();
+                    Session["AdminId"] = reader["AdminId"];
+                    Response.Redirect("AdminHome.aspx");
+                }
+                else
+                {
+                    lblMessage.Text = "Invalid username or password.";
+                }
+            }
+        }
+    }
+
+}
