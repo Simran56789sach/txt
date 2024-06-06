@@ -2,117 +2,181 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Net;
-using System.Net.Http;
-using System.Web.Http;
-using System.Web.Http.Description;
+using System.Web;
+using System.Web.Mvc;
+using CarInfoManagement_MVCController.Models;
 using Car_Info_Management.Models.Entities;
+using Car_Info_Management.Controllers;
+using Car_Info_Management;
+using Microsoft.Ajax.Utilities;
+using Microsoft.AspNetCore.Mvc;
+using System.Net.Http;
+using Microsoft.Owin.Security.Provider;
+using Newtonsoft.Json;
 
-namespace Car_Info_Management.Controllers
+
+namespace CarInfoManagement_MVCController.Controllers
 {
-    public class ManufacturersController : ApiController
+    public class CarManufacturersController : Controller
     {
-        private Car1 db = new Car1();
-
-        // GET: api/Manufacturers
-        public IQueryable<Manufacturer> GetManufacturers()
+        private readonly HttpClient _httpClient;
+        public CarManufacturersController()
         {
-            return db.Manufacturers;
+            _httpClient = new HttpClient
+            {
+                BaseAddress = new Uri("https://localhost:44388/api")
+            };
+        }
+        //private ApplicationDbContext db = new ApplicationDbContext();
+        //private CarManufacturersController obj = new CarManufacturersController();
+
+
+        // GET: CarManufacturers
+        public async Task<ActionResult> Index()
+        {
+            HttpResponseMessage response = await HelperIndex();
+            if (response.IsSuccessStatusCode)
+            {
+                var data = await response.Content.ReadAsStringAsync();
+                var carManufacturers = JsonConvert.DeserializeObject<IEnumerable<Manufacturer>>(data);
+                return View(carManufacturers);
+            }
+            return View(new List<Manufacturer>());
+
         }
 
-        // GET: api/Manufacturers/5
-        [ResponseType(typeof(Manufacturer))]
-        public IHttpActionResult GetManufacturer(int id)
+        private async Task<HttpResponseMessage> HelperIndex()
         {
-            Manufacturer manufacturer = db.Manufacturers.Find(id);
-            if (manufacturer == null)
-            {
-                return NotFound();
-            }
+            HttpResponseMessage response = await _httpClient.GetAsync("CarManufacturers");
 
-            return Ok(manufacturer);
+            return response;
         }
 
-        // PUT: api/Manufacturers/5
-        [ResponseType(typeof(void))]
-        public IHttpActionResult PutManufacturer(int id, Manufacturer manufacturer)
+
+        // GET: CarTransmissionTypes/Details/5
+        public async Task<ActionResult> Details(int? id)
         {
-            if (!ModelState.IsValid)
+            if (id == null)
             {
-                return BadRequest(ModelState);
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
 
-            if (id != manufacturer.Id)
+            HttpResponseMessage response = await HelperDetails(id);
+            if (response.IsSuccessStatusCode)
             {
-                return BadRequest();
+                var data = await response.Content.ReadAsStringAsync();
+                var carManufacturerType = JsonConvert.DeserializeObject<Manufacturer>(data);
+                return View(carManufacturerType);
             }
+            return HttpNotFound();
+        }
 
-            db.Entry(manufacturer).State = EntityState.Modified;
+        private async Task<HttpResponseMessage> HelperDetails(int? id)
+        {
+            HttpResponseMessage response = await _httpClient.GetAsync($"CarManufacturers/{id}");
+            return response;
+        }
 
-            try
+        // GET: CarTransmissionTypes/Create
+        public ActionResult Create()
+        {
+            return View();
+        }
+
+        // POST: CarManufacturerTypes/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> Create([Bind(Include = "Id,Type")] Manufacturer manufacturers)
+        {
+            if (ModelState.IsValid)
             {
-                db.SaveChanges();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ManufacturerExists(id))
+                var content = new StringContent(JsonConvert.SerializeObject(manufacturers), System.Text.Encoding.UTF8, "application/json");
+                HttpResponseMessage response = await _httpClient.PostAsync("CarManufacturers", content);
+                if (response.IsSuccessStatusCode)
                 {
-                    return NotFound();
+                    return RedirectToAction("Index");
                 }
-                else
+            }
+
+            return View(manufacturers);
+        }
+
+        // GET: CarTransmissionTypes/Edit/5
+        public async Task<ActionResult> Edit(int? id)
+        {
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+
+            HttpResponseMessage response = await _httpClient.GetAsync($"CarManufactures/{id}");
+            if (response.IsSuccessStatusCode)
+            {
+                var data = await response.Content.ReadAsStringAsync();
+                var carManufacturesType = JsonConvert.DeserializeObject<Manufacturer>(data);
+                return View(carManufacturesType);
+            }
+            return HttpNotFound();
+        }
+
+        // POST: CarTransmissionTypes/Edit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> Edit([Bind(Include = "Id,Type")] Manufacturer manufacturer)
+        {
+            if (ModelState.IsValid)
+            {
+                var content = new StringContent(JsonConvert.SerializeObject(manufacturer), System.Text.Encoding.UTF8, "application/json");
+                HttpResponseMessage response = await _httpClient.PutAsync($"CarManufacturers/{manufacturer.Id}", content);
+                if (response.IsSuccessStatusCode)
                 {
-                    throw;
+                    return RedirectToAction("Index");
                 }
             }
-
-            return StatusCode(HttpStatusCode.NoContent);
+            return View(manufacturer);
         }
 
-        // POST: api/Manufacturers
-        [ResponseType(typeof(Manufacturer))]
-        public IHttpActionResult PostManufacturer(Manufacturer manufacturer)
+        // GET: CarTransmissionTypes/Delete/5
+        public async Task<ActionResult> Delete(int? id)
         {
-            if (!ModelState.IsValid)
+            if (id == null)
             {
-                return BadRequest(ModelState);
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
 
-            db.Manufacturers.Add(manufacturer);
-            db.SaveChanges();
-
-            return CreatedAtRoute("DefaultApi", new { id = manufacturer.Id }, manufacturer);
+            HttpResponseMessage response = await _httpClient.GetAsync($"CarManufacturers/{id}");
+            if (response.IsSuccessStatusCode)
+            {
+                var data = await response.Content.ReadAsStringAsync();
+                var carManufacturers = JsonConvert.DeserializeObject<Manufacturer>(data);
+                return View(carManufacturers);
+            }
+            return HttpNotFound();
         }
 
-        // DELETE: api/Manufacturers/5
-        [ResponseType(typeof(Manufacturer))]
-        public IHttpActionResult DeleteManufacturer(int id)
+        // POST: CarTransmissionTypes/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> DeleteConfirmed(int id)
         {
-            Manufacturer manufacturer = db.Manufacturers.Find(id);
-            if (manufacturer == null)
+            HttpResponseMessage response = await _httpClient.DeleteAsync($"CarManufacturers/{id}");
+            if (response.IsSuccessStatusCode)
             {
-                return NotFound();
+                return RedirectToAction("Index");
             }
-
-            db.Manufacturers.Remove(manufacturer);
-            db.SaveChanges();
-
-            return Ok(manufacturer);
+            return HttpNotFound();
         }
 
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
-                db.Dispose();
+                _httpClient.Dispose();
             }
             base.Dispose(disposing);
-        }
-
-        private bool ManufacturerExists(int id)
-        {
-            return db.Manufacturers.Count(e => e.Id == id) > 0;
         }
     }
 }
