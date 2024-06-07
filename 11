@@ -1,0 +1,105 @@
+using Car_Info_Management.Models.Entities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Web.Mvc;
+using Newtonsoft.Json;
+using System.Net.Http.Formatting;
+
+
+namespace CarInfoManagement_MVCController.Controllers
+{
+    public class CustomerController : Controller
+    {
+        private readonly HttpClient _httpClient;
+        private readonly Uri _baseUri = new Uri("https://localhost:44388/api/");
+
+        public CustomerController()
+        {
+            _httpClient = new HttpClient();
+            _httpClient.BaseAddress = _baseUri;
+           
+        }
+
+        // GET: Customer
+        public async Task<ActionResult> Index()
+        {
+            
+                var carData = await GetCarInfos();
+                ViewBag.Options = await GetSearchOptions();
+                ViewBag.SortItems = new SelectList(new List<string>());
+                return View(carData);
+            
+          
+        }
+ 
+        //POst
+        [HttpPost]
+        public async Task<ActionResult> Search(string selectedOption, string selectedSortItem)
+        {
+           
+                var carData = await SearchCarInfos(selectedOption, selectedSortItem);
+                ViewBag.Options = await GetSearchOptions();
+                ViewBag.SortItems = await GetSortItems(selectedOption);
+                return View("Index", carData);
+           
+        }
+ 
+        [HttpPost]
+        public ActionResult Clear()
+        {
+            return RedirectToAction("Index");
+        }
+ 
+        private async Task<SelectList> GetSearchOptions()
+        {
+            using (var client = new HttpClient())
+            {
+                var response = await client.GetAsync($"{}/SearchOptions");
+                response.EnsureSuccessStatusCode();
+ 
+                var options = await response.Content.ReadAsStringAsync();
+                return new SelectList(options);
+            }
+        }
+ 
+        private async Task<SelectList> GetSortItems(string sortType)
+        {
+            using (var client = new HttpClient())
+            {
+                var response = await client.GetAsync($"{_baseUri}/SortItems?sortType={sortType}");
+                response.EnsureSuccessStatusCode();
+ 
+                var items = await response.Content.ReadAsStringAsync();
+                return new SelectList(items);
+            }
+        }
+
+        private async Task<IQueryable<CarInfo>> GetCarInfos()
+        {
+            using (var client = new HttpClient())
+            {
+                var response = await client.GetAsync("https://localhost:44388/api/Customer");
+                response.EnsureSuccessStatusCode();
+
+                var carInfos = await response.Content.ReadAsAsync<List<CarInfo>>();
+                return carInfos.AsQueryable();
+            }
+        }
+
+        private async Task<IQueryable<CarInfo>> SearchCarInfos(string selectedOption, string selectedSortItem)
+        {
+            using (var client = new HttpClient())
+            {
+                var response = await client.GetAsync($"{_baseUri}/Search?selectedOption={selectedOption}&selectedSortItem={selectedSortItem}");
+                response.EnsureSuccessStatusCode();
+ 
+                var carInfos = await response.Content.ReadAsAsync<List<CarInfo>>();
+                return carInfos.AsQueryable();
+ 
+            }
+        }
+    }
+}
