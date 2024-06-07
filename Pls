@@ -1,0 +1,42 @@
+@model YourModelNamespace.YourViewModel
+
+<!-- Your HTML markup -->
+
+@* Dropdown lists definition *@
+
+@Html.DropDownList("ddlOptions", ViewBag.Options as SelectList, "Select Option", new { @class = "form-control" })
+
+@Html.DropDownList("ddlSortItems", ViewBag.SortItems as SelectList, "Select Sort Item", new { @class = "form-control" })
+
+<!-- Include jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<!-- Your JavaScript code -->
+<script>
+    $(document).ready(function() {
+        // Add change event listener to the first DDL
+        $('#ddlOptions').change(function() {
+            var selectedOption = $(this).val();
+            
+            // Make AJAX request to fetch search options
+            $.ajax({
+                url: '/api/Customer/SearchOptions',
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    // Update options of the second DDL with retrieved search options
+                    $('#ddlSortItems').empty(); // Clear existing options
+                    $.each(data, function(index, option) {
+                        $('#ddlSortItems').append($('<option>', {
+                            value: option,
+                            text: option
+                        }));
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching search options:', error);
+                }
+            });
+        });
+    });
+</script>
