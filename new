@@ -1,0 +1,190 @@
+using CarInfoManagement.Exception_Handling;
+using CarInfoManagement_Entity;
+using CarInfoManagementDAL;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace CarInfoManagementBL
+{
+    public static class CustomerBL
+    {
+        //listing Car info on customer page load 
+        public static DataTable getCarBAL()
+        {
+            try
+            {
+                CsutomerDAL objDAL = new CsutomerDAL();
+                return objDAL.getCarDAL();
+            }
+            catch (SystemException ex)
+            {
+                throw ex;
+            }
+        }
+
+        //Adding 1st Dropdow list values, Tyoe,Manufacture,transmission
+        public static DataTable GetSearchTypeBL()
+        {
+            try
+            {
+                CsutomerDAL carDAL = new CsutomerDAL();
+                return carDAL.GetSearchTypeDAL();
+            }
+            catch (SystemException ex)
+            {
+                throw ex;
+            }
+        }
+
+        //Adding to 2nd DROP DOWNLIST, options in Manufacture,Type,Transmission
+        public static DataTable SetSortedItemsddlBL(string sortType)
+        {
+            try
+            {
+                CsutomerDAL sortDAL = new CsutomerDAL();
+                return sortDAL.SetSortedItemsddlDAL(sortType);
+            }
+            catch (SystemException ex)
+            {
+                throw ex;
+            }
+        }
+
+        //to select values fromn both dropdown list and passit to database to list accortding to the selection of user 
+        public static DataTable searchAndDisplayBL(string columnName, string value)
+        {
+            try
+            {
+                CsutomerDAL searchCarDAL = new CsutomerDAL();
+                return searchCarDAL.searchAndDisplayDAL(columnName, value);
+            }
+            catch (SystemException ex)
+            {
+                throw ex;
+            }
+        }
+    }
+}
+
+
+
+using CarInfoManagement_Entity;
+using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using CarInfoManagement.Exception_Handling;
+
+namespace CarInfoManagementDAL
+{
+    public class CsutomerDAL
+    {
+        //This Is to List all the cars, When the Customer page loads 
+        public DataTable getCarDAL()
+        {
+            try
+            {
+                SqlConnection objCon = new SqlConnection("server=(localdb)\\local;" +
+                    "database=Car_Management;" +
+                    "integrated security=true");
+
+                SqlCommand objCom = new SqlCommand("NewListCar", objCon);
+                objCom.CommandType = CommandType.StoredProcedure;                  //Concatenation concept
+                                                                                   //static portion in comments, dynamic in blue color;
+                objCon.Open();
+                SqlDataReader objDRSearch = objCom.ExecuteReader();
+
+                DataTable objDT = new DataTable();
+                objDT.Load(objDRSearch);
+                objCon.Close();
+                return objDT;
+            }
+            catch (SystemException ex)
+            {
+                throw ex;
+            }
+
+        }
+
+        //This is to add Values to dropdown List 1, i,e.TYPE,MANUFACTURER,TRANSMISSION
+        public DataTable GetSearchTypeDAL()
+        {
+            try
+            {
+                SqlConnection objCon = new SqlConnection("server=(localdb)\\local; database=Car_Management; integrated security=true");
+                SqlCommand objCom = new SqlCommand("DropDownLISTConstraint", objCon);
+                objCom.CommandType = CommandType.StoredProcedure; //newly added line**************
+                                                                  //to fire commands/query
+                objCon.Open();
+                SqlDataReader objDR = objCom.ExecuteReader();
+                DataTable objDT = new DataTable();
+                objDT.Load(objDR);
+                objCon.Close();
+                return objDT;
+            }
+            catch (SystemException ex)
+            {
+                throw ex;
+            }
+        }
+
+        //Adding to 2nd DROP DOWNLIST, options in Manufacture,Type,Transmission
+        public DataTable SetSortedItemsddlDAL(string sortType)
+        {
+            try
+            {
+                SqlConnection objCon = new SqlConnection("server=(localdb)\\local; database=Car_Management; integrated security=true");
+                SqlCommand objCom = new SqlCommand($"select Distinct {sortType} from CarInfo", objCon); //to fire commands/query
+
+                objCon.Open();
+                SqlDataReader objDR = objCom.ExecuteReader();
+                DataTable objDT = new DataTable();
+                objDT.Load(objDR);
+                objCon.Close();
+                return objDT;
+            }
+            catch (SystemException ex)
+            {
+                throw ex;
+            }
+        }
+
+        //to select values fromn both dropdown list and passit to database to list accortding to the selection of user 
+        public DataTable searchAndDisplayDAL(string columnName, string value)
+        {
+            try
+            {
+
+                SqlConnection objCon = new SqlConnection("server=(localdb)\\local;" +
+                    "database=Car_Management; " +
+                    "integrated security=true");
+
+                SqlCommand objComm = new SqlCommand("SearchCar", objCon); //////////////////////newly added line 
+                objComm.CommandType = CommandType.StoredProcedure;
+
+                objComm.Parameters.AddWithValue("@ColumnName", columnName);
+                objComm.Parameters.AddWithValue("@Value", value);
+
+                objCon.Open();
+                objComm.ExecuteNonQuery();
+                objCon.Close();
+
+                SqlDataAdapter adapter = new SqlDataAdapter(objComm);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                return dt;
+            }
+            catch (SystemException ex)
+            {
+                throw ex    ;
+            }
+        }
+    }
+}
