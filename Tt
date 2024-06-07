@@ -1,0 +1,52 @@
+@model IQueryable<CarInfoManagement.Models.Entities.CarInfo>
+
+@{
+    ViewBag.Title = "Customer";
+}
+
+<h2>Customer</h2>
+
+@if (Model != null && Model.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>CarId</th>
+                <th>ManufacturerName</th>
+                <th>Model</th>
+                <th>Type</th>
+                <th>Engine</th>
+                <th>BHP</th>
+                <th>Transmission</th>
+                <th>Mileage</th>
+                <th>Seat</th>
+                <th>AirBagDetails</th>
+                <th>BootSpace</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var car in Model)
+            {
+                <tr>
+                    <td>@car.CarId</td>
+                    <td>@car.ManufacturerName</td>
+                    <td>@car.Model</td>
+                    <td>@car.Type</td>
+                    <td>@car.Engine</td>
+                    <td>@car.BHP</td>
+                    <td>@car.Transmission</td>
+                    <td>@car.Mileage</td>
+                    <td>@car.Seat</td>
+                    <td>@car.AirBagDetails</td>
+                    <td>@car.BootSpace</td>
+                    <td>@car.Price</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No car information available.</p>
+}
