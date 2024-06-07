@@ -1,0 +1,79 @@
+using Car_Info_Management.Models.Entities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Web.Mvc;
+using Newtonsoft.Json;
+
+namespace CarInfoManagement_MVCController.Controllers
+{
+    public class CustomerController : Controller
+    {
+        private readonly HttpClient _httpClient;
+        private readonly Uri _baseUri = new Uri("https://localhost:44388/api/");
+
+        public CustomerController()
+        {
+            _httpClient = new HttpClient();
+            _httpClient.BaseAddress = _baseUri;
+        }
+
+        // GET: Customer
+        public async Task<ActionResult> Index()
+        {
+            var carData = await GetCarInfos();
+            ViewBag.Options = await GetSearchOptions();
+            ViewBag.SortItems = new SelectList(new List<string>());
+            return View(carData);
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> Search(string selectedOption, string selectedSortItem)
+        {
+            var carData = await SearchCarInfos(selectedOption, selectedSortItem);
+            ViewBag.Options = await GetSearchOptions();
+            ViewBag.SortItems = await GetSortItems(selectedOption);
+            return View("Index", carData);
+        }
+
+        [HttpPost]
+        public ActionResult Clear()
+        {
+            return RedirectToAction("Index");
+        }
+
+        private async Task<SelectList> GetSearchOptions()
+        {
+            var response = await _httpClient.GetAsync("CarInfo/SearchOptions");
+            response.EnsureSuccessStatusCode();
+            var options = await response.Content.ReadAsAsync<string[]>();
+            return new SelectList(options);
+        }
+
+        private async Task<SelectList> GetSortItems(string sortType)
+        {
+            var response = await _httpClient.GetAsync($"CarInfo/SortItems?sortType={sortType}");
+            response.EnsureSuccessStatusCode();
+            var items = await response.Content.ReadAsAsync<int[]>();
+            return new SelectList(items);
+        }
+
+        private async Task<List<CarInfoViewModel>> GetCarInfos()
+        {
+            var response = await _httpClient.GetAsync("Customer");
+            response.EnsureSuccessStatusCode();
+            var carInfos = await response.Content.ReadAsAsync<List<CarInfoViewModel>>();
+            return carInfos;
+        }
+
+        private async Task<List<CarInfoViewModel>> SearchCarInfos(string selectedOption, string selectedSortItem)
+        {
+            var response = await _httpClient.GetAsync($"Customer/Search?selectedOption={selectedOption}&selectedSortItem={selectedSortItem}");
+            response.EnsureSuccessStatusCode();
+            var carInfos = await response.Content.ReadAsAsync<List<CarInfoViewModel>>();
+            return carInfos;
+        }
+    }
+}
