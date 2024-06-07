@@ -1,0 +1,473 @@
+My web api is totally correct
+Change mvc controller and view accordingly
+so that on ui whwn we select any option then in sortitems get loaded according to selected option
+
+
+using Car_Info_Management.Models.Entities;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web.Http;
+using System;
+using System.Data;
+
+using System.Data.Entity;
+
+using System.Data.Entity.Infrastructure;
+
+using System.Linq;
+
+using System.Net;
+
+using System.Net.Http;
+
+using System.Web.Http;
+
+using System.Web.Http.Description;
+
+using Car_Info_Management.Models.Entities;
+ 
+namespace Car_Info_Management.Controllers
+
+{
+
+    public class CustomerController : ApiController
+
+    {
+
+        private Car1 db = new Car1();
+
+        // GET: api/Customer
+
+        public IEnumerable<CarInfoViewModel> GetCarInfoes()
+
+        {
+
+            var carDetails = (from car in db.CarInfoes
+
+                              join carType in db.CarTypes on car.CarTypeId equals carType.Id
+
+                              join carTransmission in db.CarTransmissionTypes on car.TransmissionTypeId equals carTransmission.Id
+
+                              join manufacturer in db.Manufacturers on car.ManufacturerId equals manufacturer.Id
+
+                              select new CarInfoViewModel
+
+                              {
+
+                                  CarId = car.CarId,
+
+                                  ManufacturerId = manufacturer.Id,
+
+                                  ManufacturerName = manufacturer.Name,
+
+                                  CarTypeId = car.CarTypeId,
+
+                                  CarTypeName = carType.Type,
+
+                                  TransmissionTypeId = car.TransmissionTypeId,
+
+                                  TransmissionTypeName = carTransmission.Type,
+
+                                  Engine = car.Engine,
+
+                                  BHP = car.BHP,
+
+                                  Mileage = car.Mileage,
+
+                                  Seat = car.Seat,
+
+                                  AirBagDetails = car.AirBagDetails,
+
+                                  BootSpace = car.BootSpace,
+
+                                  Price = car.Price
+
+                              }).ToList();
+
+            return carDetails;
+
+        }
+
+        // GET: api/CarInfo/Search?selectedOption=value&selectedSortItem=value
+
+        [HttpGet]
+
+        [Route("api/CarInfo/Search")]
+
+        public IHttpActionResult SearchCarInfos(string selectedOption, int selectedSortItem)
+
+        {
+
+            IQueryable<CarInfo> query = db.CarInfoes;
+
+            if (selectedOption == "ManufacturerId")
+
+            {
+
+                query = query.Where(c => c.ManufacturerId == selectedSortItem);
+
+            }
+
+            else if (selectedOption == "CarTypeId")
+
+            {
+
+                query = query.Where(c => c.CarTypeId == selectedSortItem);
+
+            }
+
+            else if (selectedOption == "TransmissionTypeId")
+
+            {
+
+                query = query.Where(c => c.TransmissionTypeId == selectedSortItem);
+
+            }
+
+            else
+
+            {
+
+                return BadRequest("Invalid search option.");
+
+            }
+
+            var result = (from car in query
+
+                          join carType in db.CarTypes on car.CarTypeId equals carType.Id
+
+                          join carTransmission in db.CarTransmissionTypes on car.TransmissionTypeId equals carTransmission.Id
+
+                          join manufacturer in db.Manufacturers on car.ManufacturerId equals manufacturer.Id
+
+                          select new CarInfoViewModel
+
+                          {
+
+                              CarId = car.CarId,
+
+                              ManufacturerId = manufacturer.Id,
+
+                              ManufacturerName = manufacturer.Name,
+
+                              CarTypeId = car.CarTypeId,
+
+                              CarTypeName = carType.Type,
+
+                              TransmissionTypeId = car.TransmissionTypeId,
+
+                              TransmissionTypeName = carTransmission.Type,
+
+                              Engine = car.Engine,
+
+                              BHP = car.BHP,
+
+                              Mileage = car.Mileage,
+
+                              Seat = car.Seat,
+
+                              AirBagDetails = car.AirBagDetails,
+
+                              BootSpace = car.BootSpace,
+
+                              Price = car.Price
+
+                          }).ToList();
+
+            return Ok(result);
+
+        }
+
+        // GET: api/CarInfo/SearchOptions
+
+        [HttpGet]
+
+        [Route("api/CarInfo/SearchOptions")]
+
+        public IHttpActionResult GetSearchOptions()
+
+        {
+
+            var options = new[] { "ManufacturerId", "CarTypeId", "TransmissionTypeId" };
+
+            return Ok(options);
+
+        }
+
+        // GET: api/CarInfo/SortItems?sortType=value
+
+        [HttpGet]
+
+        [Route("api/CarInfo/SortItems")]
+
+        public IHttpActionResult GetSortItems(string sortType)
+
+        {
+
+            IQueryable<int> items;
+
+            if (sortType == "ManufacturerId")
+
+            {
+
+                items = db.CarInfoes.Select(c => c.ManufacturerId).Distinct();
+
+            }
+
+            else if (sortType == "CarTypeId")
+
+            {
+
+                items = db.CarInfoes.Select(c => c.CarTypeId).Distinct();
+
+            }
+
+            else if (sortType == "TransmissionTypeId")
+
+            {
+
+                items = db.CarInfoes.Select(c => c.TransmissionTypeId).Distinct();
+
+            }
+
+            else
+
+            {
+
+                return BadRequest("Invalid sort type.");
+
+            }
+
+            return Ok(items.ToList());
+
+        }
+
+    }
+
+}
+
+
+
+
+
+
+mvc:
+
+using Car_Info_Management.Models.Entities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Web.Mvc;
+using Newtonsoft.Json;
+using System.Net.Http.Formatting;
+
+
+namespace CarInfoManagement_MVCController.Controllers
+{
+    public class CustomerController : Controller
+    {
+        private readonly HttpClient _httpClient;
+        private readonly Uri _baseUri = new Uri("https://localhost:44388/api/");
+
+        public CustomerController()
+        {
+            _httpClient = new HttpClient();
+            _httpClient.BaseAddress = _baseUri;
+           
+        }
+
+        // GET: Customer
+        public async Task<ActionResult> Index()
+        {
+            
+                var carData = await GetCarInfos();
+                ViewBag.Options = await GetSearchOptions();
+                ViewBag.SortItems = new SelectList(new List<string>());
+                return View(carData);
+            
+          
+        }
+ 
+        //POst
+        [HttpPost]
+        public async Task<ActionResult> Search(string selectedOption, string selectedSortItem)
+        {
+           
+                var carData = await SearchCarInfos(selectedOption, selectedSortItem);
+                ViewBag.Options = await GetSearchOptions();
+                ViewBag.SortItems = await GetSortItems(selectedOption);
+                return View("Index", carData);
+           
+        }
+ 
+        [HttpPost]
+        public ActionResult Clear()
+        {
+            return RedirectToAction("Index");
+        }
+ 
+        private async Task<SelectList> GetSearchOptions()
+        {
+            using (var client = new HttpClient())
+            {
+                var response = await client.GetAsync($"{_baseUri}/Customer/SearchOptions");
+                response.EnsureSuccessStatusCode();
+ 
+                var options = await response.Content.ReadAsAsync<string[]>();
+                return new SelectList(options);
+            }
+        }
+ 
+        private async Task<JsonResult> GetSortItems(string sortType)
+        {
+            using (var client = new HttpClient())
+            {
+                var response = await client.GetAsync($"{_baseUri}/Customer/SortItems?sortType={sortType}");
+                response.EnsureSuccessStatusCode();
+ 
+                var items = await response.Content.ReadAsAsync<string[]>();
+                return Json(items,JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        private async Task<IQueryable<CarInfo>> GetCarInfos()
+        {
+            using (var client = new HttpClient())
+            {
+                var response = await client.GetAsync($"{_baseUri}/Customer");
+                response.EnsureSuccessStatusCode();
+
+                var carInfos = await response.Content.ReadAsAsync<List<CarInfo>>();
+                return carInfos.AsQueryable();
+            }
+        }
+
+        private async Task<IQueryable<CarInfo>> SearchCarInfos(string selectedOption, string selectedSortItem)
+        {
+            using (var client = new HttpClient())
+            {
+                var response = await client.GetAsync($"{_baseUri}/Customer/Search?selectedOption={selectedOption}&selectedSortItem={selectedSortItem}");
+                response.EnsureSuccessStatusCode();
+ 
+                var carInfos = await response.Content.ReadAsAsync<List<CarInfo>>();
+                return carInfos.AsQueryable();
+ 
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+View:index
+
+
+
+@model IEnumerable<Car_Info_Management.Models.Entities.CarInfo>
+
+@using (Html.BeginForm("Search", "Customer", FormMethod.Post))
+{
+    <!-- Include jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <div style="padding-top: 20px; padding-bottom: 20px; font-weight: bold">
+        @Html.DropDownList("selectedOption", ViewBag.Options as SelectList, "Select Option", new { @id = "selectedOption", @style = "height: 40px; margin-left: 10px; border-radius: 7px;" })
+        @Html.DropDownList("selectedSortItem", ViewBag.SortItems as SelectList, "Select Sort Item", new { @id = "selectedSortItem", @style = "height: 40px; margin-left: 10px; border-radius: 7px;" })
+        <input type="submit" value="Search" class="btn btn-primary" style="height: 40px; width: 70px; border-radius: 7px; text-align:center;" />
+        <input type="submit" value="Clear" class="btn btn-secondary" formaction="Customer/Clear" style="height: 40px; width: 70px; border-radius: 7px; text-align:center;" />
+    </div>
+
+
+
+    <!-- Your JavaScript code -->
+    <script>
+        $(document).ready(function () {
+            // Add change event listener to the first DDL
+            $('#selectedOption').change(function () {
+                var selectedOption = $(this).val();
+
+                // Make AJAX request to fetch search options
+                $.ajax({
+                    url: '/api/Customer/SearchOptions',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        // Update options of the second DDL with retrieved search options
+                        $('#selectedSortItem').empty(); // Clear existing options
+                        $.each(data, function (index, item) {
+                            $('#selectedSortItem').append($('<option>', {
+                                value: item,
+                                text: item
+                            }));
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching search options:', error);
+                    }
+                });
+            });
+        });
+    </script>
+
+}
+
+<div>
+    <table class="table table-striped" style="padding-top: 50px;">
+        <thead>
+            <tr>
+                <th>CarId</th>
+                <th>ManufacturerName</th>
+                <th>Type</th>
+                <th>Engine</th>
+                <th>BHP</th>
+                <th>Transmission</th>
+                <th>Mileage</th>
+                <th>Seat</th>
+                <th>AirBagDetails</th>
+                <th>BootSpace</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var car in Model)
+                {
+                    <tr>
+                        <td>@car.CarId</td>
+                        <td>@car.Manufacturer</td>
+                        <td>@car.CarType</td>
+                        <td>@car.Engine</td>
+                        <td>@car.BHP</td>
+                        <td>@car.CarTransmissionType</td>
+                        <td>@car.Mileage</td>
+                        <td>@car.Seat</td>
+                        <td>@car.AirBagDetails</td>
+                        <td>@car.BootSpace</td>
+                        <td>@car.Price</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="12">No car information available.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
