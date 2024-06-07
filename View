@@ -1,0 +1,88 @@
+@model IEnumerable<Car_Info_Management.Models.Entities.CarInfoViewModel>
+
+@using (Html.BeginForm("Search", "Customer", FormMethod.Post))
+{
+    <!-- Include jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <div style="padding-top: 20px; padding-bottom: 20px; font-weight: bold">
+        @Html.DropDownList("selectedOption", ViewBag.Options as SelectList, "Select Option", new { @id = "selectedOption", @style = "height: 40px; margin-left: 10px; border-radius: 7px;" })
+        @Html.DropDownList("selectedSortItem", ViewBag.SortItems as SelectList, "Select Sort Item", new { @id = "selectedSortItem", @style = "height: 40px; margin-left: 10px; border-radius: 7px;" })
+        <input type="submit" value="Search" class="btn btn-primary" style="height: 40px; width: 70px; border-radius: 7px; text-align:center;" />
+        <input type="submit" value="Clear" class="btn btn-secondary" formaction="Customer/Clear" style="height: 40px; width: 70px; border-radius: 7px; text-align:center;" />
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            $('#selectedOption').change(function () {
+                var selectedOption = $(this).val();
+
+                $.ajax({
+                    url: '/Customer/GetSortItems',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: { sortType: selectedOption },
+                    success: function (data) {
+                        $('#selectedSortItem').empty();
+                        $.each(data, function (index, item) {
+                            $('#selectedSortItem').append($('<option>', {
+                                value: item,
+                                text: item
+                            }));
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching sort items:', error);
+                    }
+                });
+            });
+        });
+    </script>
+}
+
+<div>
+    <table class="table table-striped" style="padding-top: 50px;">
+        <thead>
+            <tr>
+                <th>CarId</th>
+                <th>ManufacturerName</th>
+                <th>CarTypeName</th>
+                <th>Engine</th>
+                <th>BHP</th>
+                <th>TransmissionTypeName</th>
+                <th>Mileage</th>
+                <th>Seat</th>
+                <th>AirBagDetails</th>
+                <th>BootSpace</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var car in Model)
+                {
+                    <tr>
+                        <td>@car.CarId</td>
+                        <td>@car.ManufacturerName</td>
+                        <td>@car.CarTypeName</td>
+                        <td>@car.Engine</td>
+                        <td>@car.BHP</td>
+                        <td>@car.TransmissionTypeName</td>
+                        <td>@car.Mileage</td>
+                        <td>@car.Seat</td>
+                        <td>@car.AirBagDetails</td>
+                        <td>@car.BootSpace</td>
+                        <td>@car.Price</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="11">No car information available.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>p
