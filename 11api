@@ -1,0 +1,87 @@
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Web.Http;
+using System.Web.Http.Description;
+using Car_Info_Management.Models.Entities;
+
+namespace Car_Info_Management.Controllers
+{
+    public class CustomerController : ApiController
+    {
+        private Car1 db = new Car1();
+
+        // GET: api/CarInfo
+       
+        public IHttpActionResult GetCarInfos()
+        {
+            var carInfos = db.CarInfoes.ToList();
+            return Ok(carInfos);
+        }
+
+        // GET: api/CarInfo/Search?selectedOption=value&selectedSortItem=value
+        [HttpGet]
+        [Route("api/Customer/Search")]
+        public IHttpActionResult SearchCarInfos(string selectedOption, int selectedSortItem)
+        {
+            IQueryable<CarInfo> query = db.CarInfoes;
+
+            switch (selectedOption)
+            {
+                case "ManufacturerId":
+                    query = query.Where(c => c.ManufacturerId == selectedSortItem);
+                    break;
+                case "CarTypeId":
+                    query = query.Where(c => c.CarTypeId == selectedSortItem);
+                    break;
+                case "TransmissionTypeId":
+                    query = query.Where(c => c.TransmissionTypeId ==selectedSortItem);
+                    break;
+                default:
+                    return BadRequest("Invalid search option.");
+            }
+
+            return Ok(query.ToList());
+        }
+
+        // GET: api/CarInfo/SearchOptions
+        [HttpGet]
+        [Route("api/Customer/SearchOptions")]
+        public IHttpActionResult GetSearchOptions()
+        {
+            var options = new[] { "ManufacturerId", "CarTypeId", "TransmissionTypeId" };
+            return Ok(options);
+        }
+
+        // GET: api/CarInfo/SortItems?sortType=value
+        [HttpGet]
+        [Route("api/Customer/SortItems")]
+        public IHttpActionResult GetSortItems(string sortType)
+        {
+            IQueryable<int> items;
+
+            switch (sortType)
+            {
+                case "ManufacturerId":
+                    items = db.CarInfoes.Select(c=>c.ManufacturerId).Distinct();
+                    break;
+                case "CarTypeId":
+                    items = db.CarInfoes.Select(c => c.CarTypeId).Distinct();
+                    break;
+                case "TransmissionTypeId":
+                    items = db.CarInfoes.Select(c => c.TransmissionTypeId).Distinct();
+                    break;
+                default:
+                    return BadRequest("Invalid sort type.");
+            }
+
+            return Ok(items.ToList());
+
+        }
+    }
+}
