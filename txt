@@ -1,182 +1,241 @@
+<%@ Page Title="" Language="C#" MasterPageFile="~/MasterPageTemp.Master" AutoEventWireup="true" CodeBehind="Customer.aspx.cs" Inherits="CarInfoManagement.Customer" %>
+
+<asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="cphOpenSideNav" runat="server">
+</asp:Content>
+<asp:Content ID="Content3" ContentPlaceHolderID="cphSideNav" runat="server">
+</asp:Content>
+<asp:Content ID="Content4" ContentPlaceHolderID="cphSideNavItems" runat="server">
+</asp:Content>
+<asp:Content ID="Content5" ContentPlaceHolderID="cphBody" runat="server">
+    <div style="padding-top: 20px; padding-bottom: 20px; font-weight: bold">
+
+        <asp:DropDownList ID="ddlOptions" AppendDataBoundItems="true" runat="server"
+            AutoPostBack="true" OnSelectedIndexChanged="ddlOptions_SelectedIndexChanged"
+            Style="height: 40px; margin-left: 10px; border-radius: 7px;">
+        </asp:DropDownList>
+
+        <asp:DropDownList ID="ddlSortItems" runat="server" AppendDataBoundItems="false" AutoPostBack="True"
+            Style="height: 40px; margin-left: 10px; border-radius: 7px;">
+        </asp:DropDownList>
+
+        <asp:Button class="btnSearchStyle" ID="btnSearch" runat="server" Style="height: 40px; width: 70px; border-radius: 7px;text-align:center;" Text="Search" OnClick="btnSearch_Click1" />
+        <asp:Button ID="btnClear" runat="server" Text="Clear" OnClick="btnClear_Click" Style="height: 40px; width: 70px; border-radius: 7px;text-align:center;" />
+        <br />
+    </div>
+    <div>
+        <table class="w-100" style="padding-top: 50px;">
+            <tr>
+                <td style="width: 365px">&nbsp;</td>
+                <td class="text-center" style="width: 255px; padding-top: 50px;">
+                    <asp:GridView ID="GridView1" CssClass="table table-striped" runat="server" OnSelectedIndexChanged="GridView1_SelectedIndexChanged" BackColor="White" BorderColor="#E7E7FF" BorderStyle="None" BorderWidth="1px" CellPadding="3" GridLines="Horizontal" HorizontalAlign="Center">
+                        <AlternatingRowStyle BackColor="#F7F7F7" />
+                        <FooterStyle BackColor="#B5C7DE" ForeColor="#4A3C8C" />
+                        <HeaderStyle CssClass="gridViewHeader" BackColor="#4A3C8C" Font-Bold="True" ForeColor="#F7F7F7" />
+                        <PagerStyle BackColor="#E7E7FF" ForeColor="#4A3C8C" HorizontalAlign="Right" />
+                        <RowStyle CssClass="gridViewRow" BackColor="#E7E7FF" ForeColor="#4A3C8C" />
+                        <SelectedRowStyle BackColor="#738A9C" Font-Bold="True" ForeColor="#F7F7F7" />
+                        <SortedAscendingCellStyle BackColor="#F4F4FD" />
+                        <SortedAscendingHeaderStyle BackColor="#5A4C9D" />
+                        <SortedDescendingCellStyle BackColor="#D8D8F0" />
+                        <SortedDescendingHeaderStyle BackColor="#3E3277" />
+                    </asp:GridView>
+                </td>
+                <td>&nbsp;</td>
+            </tr>
+        </table>
+    </div>
+</asp:Content>
+
+
+
+
+
+
+
+
+using CarInfoManagement_Entity;
+using CarInfoManagementBL;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.Entity;
 using System.Linq;
-using System.Threading.Tasks;
-using System.Net;
 using System.Web;
-using System.Web.Mvc;
-using CarInfoManagement_MVCController.Models;
-using Car_Info_Management.Models.Entities;
-using Car_Info_Management.Controllers;
-using Car_Info_Management;
-using Microsoft.Ajax.Utilities;
-using Microsoft.AspNetCore.Mvc;
-using System.Net.Http;
-using Microsoft.Owin.Security.Provider;
-using Newtonsoft.Json;
+using System.Web.UI;
+using System.Web.UI.WebControls;
 
-
-namespace CarInfoManagement_MVCController.Controllers
+namespace CarInfoManagement
 {
-    public class CarManufacturersController : Controller
+    public partial class Customer : System.Web.UI.Page
     {
-        private readonly HttpClient _httpClient;
-        public CarManufacturersController()
+       
+       
+        protected void Page_Load(object sender, EventArgs e)
         {
-            _httpClient = new HttpClient
+            try
             {
-                BaseAddress = new Uri("https://localhost:44388/api")
-            };
-        }
-        //private ApplicationDbContext db = new ApplicationDbContext();
-        //private CarManufacturersController obj = new CarManufacturersController();
-
-
-        // GET: CarManufacturers
-        public async Task<ActionResult> Index()
-        {
-            HttpResponseMessage response = await HelperIndex();
-            if (response.IsSuccessStatusCode)
-            {
-                var data = await response.Content.ReadAsStringAsync();
-                var carManufacturers = JsonConvert.DeserializeObject<IEnumerable<Manufacturer>>(data);
-                return View(carManufacturers);
-            }
-            return View(new List<Manufacturer>());
-
-        }
-
-        private async Task<HttpResponseMessage> HelperIndex()
-        {
-            HttpResponseMessage response = await _httpClient.GetAsync("CarManufacturers");
-
-            return response;
-        }
-
-
-        // GET: CarTransmissionTypes/Details/5
-        public async Task<ActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-
-            HttpResponseMessage response = await HelperDetails(id);
-            if (response.IsSuccessStatusCode)
-            {
-                var data = await response.Content.ReadAsStringAsync();
-                var carManufacturerType = JsonConvert.DeserializeObject<Manufacturer>(data);
-                return View(carManufacturerType);
-            }
-            return HttpNotFound();
-        }
-
-        private async Task<HttpResponseMessage> HelperDetails(int? id)
-        {
-            HttpResponseMessage response = await _httpClient.GetAsync($"CarManufacturers/{id}");
-            return response;
-        }
-
-        // GET: CarTransmissionTypes/Create
-        public ActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: CarManufacturerTypes/Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Create([Bind(Include = "Id,Type")] Manufacturer manufacturers)
-        {
-            if (ModelState.IsValid)
-            {
-                var content = new StringContent(JsonConvert.SerializeObject(manufacturers), System.Text.Encoding.UTF8, "application/json");
-                HttpResponseMessage response = await _httpClient.PostAsync("CarManufacturers", content);
-                if (response.IsSuccessStatusCode)
+                if (!IsPostBack)
                 {
-                    return RedirectToAction("Index");
+                    ListByCar();
+                    GetSearchType();
+                    SetSortedItemsddl(ddlOptions.SelectedValue.ToString());
+
                 }
             }
-
-            return View(manufacturers);
+            catch (SystemException ex)
+            {
+                Session["ErrorMessage"] = "Customer Load Failed" + ex.Message;
+                Response.Redirect("ExceptionHandlingPage.aspx", false);
+                Context.ApplicationInstance.CompleteRequest();
+            }
         }
 
-        // GET: CarTransmissionTypes/Edit/5
-        public async Task<ActionResult> Edit(int? id)
+        protected void btnSearch_Click(object sender, EventArgs e)
         {
-            if (id == null)
+            try
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+
+                string searchTerm = ddlOptions.Text;
+                int selectOption = Convert.ToInt32(ddlOptions.SelectedValue);
+            }
+            catch (SystemException ex)
+            {
+                Session["ErrorMessage"] = "Load Failed" + ex.Message;
+                Response.Redirect("ExceptionHandlingPage.aspx", false);
+                Context.ApplicationInstance.CompleteRequest();
+            }
+        }
+        protected void btnSearch_Click1(object sender, EventArgs e)
+        {
+            try
+            {
+                searchAndDisplay();
+            }
+            catch (SystemException ex)
+            {
+                Session["ErrorMessage"] = "Load Failed" + ex.Message;
+                Response.Redirect("ExceptionHandlingPage.aspx", false);
+                Context.ApplicationInstance.CompleteRequest();
             }
 
-            HttpResponseMessage response = await _httpClient.GetAsync($"CarManufactures/{id}");
-            if (response.IsSuccessStatusCode)
-            {
-                var data = await response.Content.ReadAsStringAsync();
-                var carManufacturesType = JsonConvert.DeserializeObject<Manufacturer>(data);
-                return View(carManufacturesType);
-            }
-            return HttpNotFound();
         }
 
-        // POST: CarTransmissionTypes/Edit/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Edit([Bind(Include = "Id,Type")] Manufacturer manufacturer)
+
+
+        protected void ddlOptions_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (ModelState.IsValid)
+            try
             {
-                var content = new StringContent(JsonConvert.SerializeObject(manufacturer), System.Text.Encoding.UTF8, "application/json");
-                HttpResponseMessage response = await _httpClient.PutAsync($"CarManufacturers/{manufacturer.Id}", content);
-                if (response.IsSuccessStatusCode)
+                ddlSortItems.Items.Clear();
+                SetSortedItemsddl(ddlOptions.SelectedValue.ToString());
+            }
+            catch (SystemException ex)
+            {
+                Session["ErrorMessage"] = "Load Failed" + ex.Message;
+                Response.Redirect("ExceptionHandlingPage.aspx", false);
+                Context.ApplicationInstance.CompleteRequest();
+            }
+        }
+
+
+        //BL ANd DAL Implemented
+        public void ListByCar()
+        {
+            try
+            {
+                DataTable dt = CustomerBL.getCarBAL();
+                GridView1.DataSource = dt; //it returns the table as it is 
+                GridView1.DataBind();
+            }
+            catch (SystemException ex)
+            {
+                Session["ErrorMessage"] = "Load Failed" + ex.Message;
+                Response.Redirect("ExceptionHandlingPage.aspx", false);
+                Context.ApplicationInstance.CompleteRequest();
+            }
+        }
+
+        //BL and DAL COMPLETED 
+        public void GetSearchType()   //This is for dropdown list one 
+        {
+            try
+            {
+                DataTable dt = CustomerBL.GetSearchTypeBL();
+                foreach (DataColumn objCol in dt.Columns)
                 {
-                    return RedirectToAction("Index");
+                    ddlOptions.Items.Add(objCol.ColumnName);
                 }
             }
-            return View(manufacturer);
+            catch (SystemException ex)
+            {
+                Session["ErrorMessage"] = "Load Failed" + ex.Message;
+                Response.Redirect("ExceptionHandlingPage.aspx", false);
+                Context.ApplicationInstance.CompleteRequest();
+            }
+
         }
 
-        // GET: CarTransmissionTypes/Delete/5
-        public async Task<ActionResult> Delete(int? id)
+        //BL AND DAL COMPLETED 
+        public void SetSortedItemsddl(string sortType)  //this is for dropdown list 2 
         {
-            if (id == null)
+            try
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                DataTable dt = CustomerBL.SetSortedItemsddlBL(sortType);
+                foreach (DataRow objCol in dt.Rows)
+                {
+                    ddlSortItems.Items.Add(objCol.Field<string>(sortType));
+                }
             }
-
-            HttpResponseMessage response = await _httpClient.GetAsync($"CarManufacturers/{id}");
-            if (response.IsSuccessStatusCode)
+            catch (SystemException ex)
             {
-                var data = await response.Content.ReadAsStringAsync();
-                var carManufacturers = JsonConvert.DeserializeObject<Manufacturer>(data);
-                return View(carManufacturers);
+                Session["ErrorMessage"] = "Load Failed" + ex.Message;
+                Response.Redirect("ExceptionHandlingPage.aspx", false);
+                Context.ApplicationInstance.CompleteRequest();
             }
-            return HttpNotFound();
         }
 
-        // POST: CarTransmissionTypes/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> DeleteConfirmed(int id)
+
+        //BL AND DAL COMPLETED 
+        public void searchAndDisplay()
         {
-            HttpResponseMessage response = await _httpClient.DeleteAsync($"CarManufacturers/{id}");
-            if (response.IsSuccessStatusCode)
+            try
             {
-                return RedirectToAction("Index");
+                string selectedColumn = ddlOptions.SelectedValue;
+                string selectedValue = ddlSortItems.SelectedValue;
+                DataTable dt = CustomerBL.searchAndDisplayBL(selectedColumn, selectedValue);
+
+                GridView1.DataSource = dt;
+                GridView1.DataBind();
             }
-            return HttpNotFound();
+            catch (SystemException ex)
+            {
+                Session["ErrorMessage"] = "Load Failed" + ex.Message;
+                Response.Redirect("ExceptionHandlingPage.aspx", false);
+                Context.ApplicationInstance.CompleteRequest();
+            }
+
         }
 
-        protected override void Dispose(bool disposing)
+        protected void GridView1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (disposing)
+
+        }
+
+        protected void btnClear_Click(object sender, EventArgs e)
+        {
+            try
             {
-                _httpClient.Dispose();
+                Response.Redirect("Customer.aspx", false);
+                Context.ApplicationInstance.CompleteRequest();
             }
-            base.Dispose(disposing);
+            catch (SystemException ex)
+            {
+                Session["ErrorMessage"] = "Load Failed" + ex.Message;
+                Response.Redirect("ExceptionHandlingPage.aspx", false);
+                Context.ApplicationInstance.CompleteRequest();
+            }
+
         }
     }
 }
