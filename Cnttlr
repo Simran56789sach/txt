@@ -1,0 +1,102 @@
+using CarInfoManagement.Models;
+using System;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Web.Mvc;
+
+namespace CarInfoManagement.Controllers
+{
+    public class CustomerController : Controller
+    {
+        private readonly string apiUrl = "http://localhost:port/api/CarInfo"; // Replace 'port' with your actual port
+
+        // GET: Customer
+        public async Task<ActionResult> Index()
+        {
+            try
+            {
+                var carData = await GetCarInfos();
+                ViewBag.Options = await GetSearchOptions();
+                ViewBag.SortItems = new SelectList(new List<string>());
+                return View(carData);
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "Customer Load Failed: " + ex.Message;
+                return RedirectToAction("Error", "Home");
+            }
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> Search(string selectedOption, string selectedSortItem)
+        {
+            try
+            {
+                var carData = await SearchCarInfos(selectedOption, selectedSortItem);
+                ViewBag.Options = await GetSearchOptions();
+                ViewBag.SortItems = await GetSortItems(selectedOption);
+                return View("Index", carData);
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "Load Failed: " + ex.Message;
+                return RedirectToAction("Error", "Home");
+            }
+        }
+
+        [HttpPost]
+        public ActionResult Clear()
+        {
+            return RedirectToAction("Index");
+        }
+
+        private async Task<SelectList> GetSearchOptions()
+        {
+            using (var client = new HttpClient())
+            {
+                var response = await client.GetAsync($"{apiUrl}/SearchOptions");
+                response.EnsureSuccessStatusCode();
+
+                var options = await response.Content.ReadAsAsync<string[]>();
+                return new SelectList(options);
+            }
+        }
+
+        private async Task<SelectList> GetSortItems(string sortType)
+        {
+            using (var client = new HttpClient())
+            {
+                var response = await client.GetAsync($"{apiUrl}/SortItems?sortType={sortType}");
+                response.EnsureSuccessStatusCode();
+
+                var items = await response.Content.ReadAsAsync<string[]>();
+                return new SelectList(items);
+            }
+        }
+
+        private async Task<IQueryable<CarInfo>> GetCarInfos()
+        {
+            using (var client = new HttpClient())
+            {
+                var response = await client.GetAsync(apiUrl);
+                response.EnsureSuccessStatusCode();
+
+                var carInfos = await response.Content.ReadAsAsync<IQueryable<CarInfo>>();
+                return carInfos;
+            }
+        }
+
+        private async Task<IQueryable<CarInfo>> SearchCarInfos(string selectedOption, string selectedSortItem)
+        {
+            using (var client = new HttpClient())
+            {
+                var response = await client.GetAsync($"{apiUrl}/Search?selectedOption={selectedOption}&selectedSortItem={selectedSortItem}");
+                response.EnsureSuccessStatusCode();
+
+                var carInfos = await response.Content.ReadAsAsync<IQueryable<CarInfo>>();
+                return carInfos;
+            }
+        }
+    }
+}
