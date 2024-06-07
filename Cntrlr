@@ -1,0 +1,122 @@
+using System;
+using System.Data;
+using System.Data.SqlClient;
+using System.Linq;
+using System.Web.Mvc;
+
+namespace CarInfoManagement.Controllers
+{
+    public class CustomerController : Controller
+    {
+        private string connectionString = "server=(localdb)\\local; database=Car_Management; integrated security=true";
+
+        public ActionResult Index()
+        {
+            try
+            {
+                var dt = GetCarData();
+                ViewBag.Options = GetSearchTypes();
+                ViewBag.SortItems = new SelectList(new List<string>());
+                return View(dt);
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "Customer Load Failed: " + ex.Message;
+                return RedirectToAction("Error", "Home");
+            }
+        }
+
+        [HttpPost]
+        public ActionResult Search(string selectedOption, string selectedSortItem)
+        {
+            try
+            {
+                var dt = SearchAndDisplay(selectedOption, selectedSortItem);
+                ViewBag.Options = GetSearchTypes();
+                ViewBag.SortItems = SetSortedItems(selectedOption);
+                return View("Index", dt);
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "Load Failed: " + ex.Message;
+                return RedirectToAction("Error", "Home");
+            }
+        }
+
+        [HttpPost]
+        public ActionResult Clear()
+        {
+            return RedirectToAction("Index");
+        }
+
+        private DataTable GetCarData()
+        {
+            using (SqlConnection con = new SqlConnection(connectionString))
+            {
+                SqlCommand cmd = new SqlCommand("NewListCar", con)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                con.Open();
+                SqlDataReader reader = cmd.ExecuteReader();
+                DataTable dt = new DataTable();
+                dt.Load(reader);
+                return dt;
+            }
+        }
+
+        private SelectList GetSearchTypes()
+        {
+            using (SqlConnection con = new SqlConnection(connectionString))
+            {
+                SqlCommand cmd = new SqlCommand("DropDownLISTConstraint", con)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                con.Open();
+                SqlDataReader reader = cmd.ExecuteReader();
+                DataTable dt = new DataTable();
+                dt.Load(reader);
+                var options = dt.Columns.Cast<DataColumn>().Select(x => x.ColumnName).ToList();
+                return new SelectList(options);
+            }
+        }
+
+        private SelectList SetSortedItems(string sortType)
+        {
+            using (SqlConnection con = new SqlConnection(connectionString))
+            {
+                SqlCommand cmd = new SqlCommand($"SELECT DISTINCT {sortType} FROM CarInfo", con);
+
+                con.Open();
+                SqlDataReader reader = cmd.ExecuteReader();
+                DataTable dt = new DataTable();
+                dt.Load(reader);
+                var items = dt.AsEnumerable().Select(x => x.Field<string>(sortType)).ToList();
+                return new SelectList(items);
+            }
+        }
+
+        private DataTable SearchAndDisplay(string columnName, string value)
+        {
+            using (SqlConnection con = new SqlConnection(connectionString))
+            {
+                SqlCommand cmd = new SqlCommand("SearchCar", con)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                cmd.Parameters.AddWithValue("@ColumnName", columnName);
+                cmd.Parameters.AddWithValue("@Value", value);
+
+                con.Open();
+                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                return dt;
+            }
+        }
+    }
+}
